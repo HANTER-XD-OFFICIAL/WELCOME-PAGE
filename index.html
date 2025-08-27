@@ -40,15 +40,15 @@
       cursor: pointer;
       border: none;
       color: white;
-      transition: transform 0.2s;
+      transition: transform 0.2s, background-color 0.3s;
     }
 
     .btn:hover {
       transform: scale(1.1);
     }
 
-    .yes { background-color: green; }
-    .no { background-color: red; }
+    .yes { background-color: #28a745; }
+    .no { background-color: #dc3545; }
   </style>
 </head>
 <body>
@@ -63,20 +63,18 @@
   </div>
 
   <script>
-    // রেনডম কালার জেনারেট করার ফাংশন
-    function getRandomColor() {
-      const letters = '0123456789ABCDEF';
-      let color = '#';
-      for (let i = 0; i < 6; i++) {
-        color += letters[Math.floor(Math.random() * 16)];
-      }
-      return color;
+    // ইউনিক, সুন্দর হিউ ভিত্তিক কালার জেনারেটর
+    function getUniqueColor() {
+      const hue = Math.floor(Math.random() * 360); // হিউ 0-360
+      const saturation = Math.floor(Math.random() * 30) + 70; // স্যাচুরেশন 70-100%
+      const lightness = Math.floor(Math.random() * 20) + 40; // লাইটনেস 40-60%
+      return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
     }
 
-    // বক্সের কালার প্রতি 1 সেকেন্ডে পরিবর্তন হবে
+    // প্রতি 1 সেকেন্ডে ইউনিক কালার পরিবর্তন
     setInterval(() => {
       const box = document.getElementById('welcomeBox');
-      box.style.backgroundColor = getRandomColor();
+      box.style.backgroundColor = getUniqueColor();
     }, 1000);
 
     // YES বাটনে ক্লিক করলে ফেসবুক লিঙ্কে যাবে
