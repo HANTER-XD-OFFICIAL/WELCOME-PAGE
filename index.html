@@ -16,15 +16,23 @@
     }
 
     .welcome-box {
-      padding: 40px 60px;
+      padding: 50px 70px;
       border-radius: 20px;
       font-size: 28px;
       font-weight: bold;
       text-align: center;
       color: white;
-      transition: background-color 0.5s;
       margin-bottom: 40px;
       border: 3px solid white;
+      background: linear-gradient(45deg, red, yellow, green, cyan, magenta);
+      background-size: 400% 400%;
+      animation: gradientAnimation 8s ease infinite;
+    }
+
+    @keyframes gradientAnimation {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
     }
 
     .buttons {
@@ -53,7 +61,7 @@
 </head>
 <body>
 
-  <div class="welcome-box" id="welcomeBox">
+  <div class="welcome-box">
     👋 WELCOME TO MY MESSENGER
   </div>
 
@@ -63,26 +71,10 @@
   </div>
 
   <script>
-    // ইউনিক, সুন্দর হিউ ভিত্তিক কালার জেনারেটর
-    function getUniqueColor() {
-      const hue = Math.floor(Math.random() * 360); // হিউ 0-360
-      const saturation = Math.floor(Math.random() * 30) + 70; // স্যাচুরেশন 70-100%
-      const lightness = Math.floor(Math.random() * 20) + 40; // লাইটনেস 40-60%
-      return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
-    }
-
-    // প্রতি 1 সেকেন্ডে ইউনিক কালার পরিবর্তন
-    setInterval(() => {
-      const box = document.getElementById('welcomeBox');
-      box.style.backgroundColor = getUniqueColor();
-    }, 1000);
-
-    // YES বাটনে ক্লিক করলে ফেসবুক লিঙ্কে যাবে
     function goFacebook() {
       window.location.href = "https://www.facebook.com/MD.RASEL.8.3.4";
     }
 
-    // NO বাটনে ক্লিক করলে সতর্কবার্তা দেখাবে
     function noAction() {
       alert("পেট খেতে পারে! 😅");
     }
