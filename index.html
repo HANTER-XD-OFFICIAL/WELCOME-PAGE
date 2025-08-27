@@ -10,28 +10,81 @@
       justify-content: center;
       align-items: center;
       height: 100vh;
+      font-family: Arial, sans-serif;
+    }
+
+    .welcome-box {
+      padding: 30px 50px;
+      border-radius: 15px;
       font-size: 30px;
       font-weight: bold;
       text-align: center;
-      animation: colorChange 2s infinite;
-    }
-    @keyframes colorChange {
-      0% { color: red; }
-      25% { color: yellow; }
-      50% { color: green; }
-      75% { color: cyan; }
-      100% { color: magenta; }
-    }
-    a {
       color: white;
-      font-size: 20px;
-      margin-top: 20px;
-      text-decoration: none;
+      transition: background-color 0.5s;
+      margin-bottom: 30px;
     }
+
+    .buttons {
+      display: flex;
+      gap: 20px;
+    }
+
+    .btn {
+      padding: 15px 30px;
+      border-radius: 50px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      border: none;
+      color: white;
+      transition: transform 0.2s;
+    }
+
+    .btn:hover {
+      transform: scale(1.1);
+    }
+
+    .yes { background-color: green; }
+    .no { background-color: red; }
   </style>
 </head>
 <body>
-  👋 WELCOME TO MY MESSENGER <br>
-  👉 <a href="https://www.facebook.com/MD.RASEL.8.3.4">CLICK HERE TO VISIT MY FACEBOOK</a>
+
+  <div class="welcome-box" id="welcomeBox">
+    👋 WELCOME TO MY MESSENGER
+  </div>
+
+  <div class="buttons">
+    <button class="btn yes" onclick="goFacebook()">YES</button>
+    <button class="btn no" onclick="noAction()">NO</button>
+  </div>
+
+  <script>
+    // রেনডম কালার জেনারেট করার ফাংশন
+    function getRandomColor() {
+      const letters = '0123456789ABCDEF';
+      let color = '#';
+      for (let i = 0; i < 6; i++) {
+        color += letters[Math.floor(Math.random() * 16)];
+      }
+      return color;
+    }
+
+    // বক্সের কালার প্রতি 1 সেকেন্ডে পরিবর্তন হবে
+    setInterval(() => {
+      document.getElementById('welcomeBox').style.backgroundColor = getRandomColor();
+    }, 1000);
+
+    // YES বাটনে ক্লিক করলে ফেসবুক লিঙ্কে যাবে
+    function goFacebook() {
+      window.location.href = "https://www.facebook.com/MD.RASEL.8.3.4";
+    }
+
+    // NO বাটনে ক্লিক করলে সতর্কবার্তা দেখাবে
+    function noAction() {
+      alert("পেট খেতে পারে! 😅");
+    }
+  </script>
+
 </body>
 </html>
