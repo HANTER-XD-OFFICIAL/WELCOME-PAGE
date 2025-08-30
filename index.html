@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SECURE ACCESS POINT</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #00FF41;
+            --background-color: #000;
+            --glow-color: rgba(0, 255, 65, 0.75);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--background-color);
+            color: var(--primary-color);
+            font-family: 'Source Code Pro', monospace;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            perspective: 1000px;
+        }
+        
+        #container {
+            width: 90%;
+            max-width: 800px;
+            text-align: center;
+            padding: 40px;
+            border: 1px solid var(--primary-color);
+            background: rgba(0, 10, 0, 0.5);
+            box-shadow: 0 0 25px var(--glow-color);
+            backdrop-filter: blur(5px);
+            transform-style: preserve-3d;
+            transition: transform 0.1s linear;
+        }
+
+        #logo-art {
+            font-size: 0.8rem;
+            line-height: 1;
+            text-shadow: 0 0 10px var(--glow-color);
+            margin-bottom: 20px;
+            opacity: 0;
+            transition: opacity 2s ease-in;
+        }
+
+        #logo-art.visible {
+            opacity: 1;
+        }
+        
+        .boot-sequence p {
+            font-size: 1rem;
+            text-align: left;
+            margin: 5px 0;
+            min-height: 1.2em;
+        }
+        
+        #enter-btn {
+            display: inline-block;
+            margin-top: 30px;
+            padding: 12px 25px;
+            border: 1px solid var(--primary-color);
+            color: var(--primary-color);
+            text-decoration: none;
+            font-size: 1.2rem;
+            font-weight: 700;
+            text-shadow: 0 0 10px var(--glow-color);
+            background: transparent;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 1s, background 0.3s, box-shadow 0.3s;
+        }
+        
+        #enter-btn:hover {
+            background: rgba(0, 255, 65, 0.1);
+            box-shadow: 0 0 15px var(--glow-color);
+        }
+
+        #enter-btn.visible {
+            opacity: 1;
+        }
+
+        @media (max-width: 768px) {
+            #logo-art { font-size: 0.6rem; }
+            .boot-sequence p { font-size: 0.9rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="container">
+        <pre id="logo-art"></pre>
+        <div class="boot-sequence" id="boot-sequence">
+            <p></p>
+            <p></p>
+            <p></p>
+        </div>
+        <a href="welcome.html" id="enter-btn">[ACCESS SYSTEM]</a>
+    </div>
+
+    <script>
+        const container = document.getElementById('container');
+        const logoArt = document.getElementById('logo-art');
+        const bootSequence = document.getElementById('boot-sequence').children;
+        const enterButton = document.getElementById('enter-btn');
+        
+        // --- Corrected Hacker Face ASCII Art ---
+        const hackerFaceAscii = `
+             ⠉⠉⠉⠉⠁⠀⠀⠀⠀⠒⠂⠰⠤⢤⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠛⠻⢤⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠠⠀⠐⠒⠒⠀⠀⠈⠉⠉⠉⠉⢉⣉⣉⣉⣙⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⢀⡀⠤⠒⠒⠉⠁⠀⠀⠀⠀⠳⣤⣀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣶⠛⠛⠉⠛⠛⠶⢦⣤⡐⢀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣰⡿⠁⠀⠀⠀⠀⠀⠀⠀⠈⠉⢳⣦⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠳⡤⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢹⣇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠙⢷⣤⣀⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠙⠛⠛⠳⠶⢶⣦⠤⣄⡀⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠳⣄⠉⠑⢄⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⡀⠀⠁
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠱⡄⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢰⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡄
+`;
+        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+        async function scrambleType(element, text) {
+            const chars = '!<>-_\\/[]{}—=+*^?#';
+            let currentText = '';
+            for (let i = 0; i < text.length; i++) {
+                const targetChar = text[i];
+                if (targetChar === ' ') {
+                    currentText += ' ';
+                    element.textContent = currentText;
+                    continue;
+                }
+                for (let j = 0; j < 3; j++) {
+                    element.textContent = currentText + chars[Math.floor(Math.random() * chars.length)];
+                    await sleep(30);
+                }
+                currentText += targetChar;
+                element.textContent = currentText;
+            }
+        }
+
+        window.addEventListener('load', async () => {
+            logoArt.textContent = hackerFaceAscii;
+            await sleep(500);
+            logoArt.classList.add('visible');
+            await sleep(2000);
+
+            await scrambleType(bootSequence[0], '> BOOTING SECURE KERNEL v2.5...');
+            await sleep(500);
+            await scrambleType(bootSequence[1], '> ESTABLISHING UPLINK TO THE MAINFRAME...');
+            await sleep(500);
+            await scrambleType(bootSequence[2], '> AWAITING AUTHORIZATION...');
+            
+            await sleep(1000);
+            enterButton.classList.add('visible');
+        });
+        
+        document.addEventListener('mousemove', (e) => {
+            const { clientX, clientY } = e;
+            const { innerWidth, innerHeight } = window;
+            const xOffset = (clientX / innerWidth) - 0.5;
+            const yOffset = (clientY / innerHeight) - 0.5;
+            const rotateY = xOffset * 15;
+            const rotateX = yOffset * -10;
+            container.style.transform = `rotateY(${rotateY}deg) rotateX(${rotateX}deg)`;
+        });
+
+    </script>
+</body>
+</html>

